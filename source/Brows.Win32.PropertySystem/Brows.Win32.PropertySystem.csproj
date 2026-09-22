@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Win32\PlatformInvoke\PropSys\" />
+  </ItemGroup>
+</Project>

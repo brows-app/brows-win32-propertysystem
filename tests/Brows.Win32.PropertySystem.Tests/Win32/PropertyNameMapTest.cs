@@ -8,18 +8,24 @@ namespace Brows.Win32;
 internal sealed class PropertyNameMapTest {
     [Test]
     public void GetCanonicalNames_DuplicateLegacyName_ReturnsEveryDocumentedCanonicalName() {
-        Assert.That(PropertyNameMap.GetCanonicalNames("Copyright"), Is.EqualTo(new[] { "System.Copyright", "System.Image.Copyright" }));
-        Assert.That(PropertyNameMap.GetCanonicalNames("Status"), Is.EqualTo(new[] { "System.Media.Status", "System.Status" }));
+        using (Assert.EnterMultipleScope()) {
+            Assert.That(PropertyNameMap.GetCanonicalNames("Copyright"),
+                    Is.EqualTo(["System.Copyright", "System.Image.Copyright"]));
+            Assert.That(PropertyNameMap.GetCanonicalNames("Status"),
+                Is.EqualTo(["System.Media.Status", "System.Status"]));
+        }
     }
 
     [Test]
     public void GetCanonicalNames_LegacyNameRepeatedWithSameCanonicalName_ReturnsSingleEntry() {
-        Assert.That(PropertyNameMap.GetCanonicalNames("Compression"), Is.EqualTo(new[] { "System.Video.Compression" }));
+        Assert.That(PropertyNameMap.GetCanonicalNames("Compression"),
+            Is.EqualTo(["System.Video.Compression"]));
     }
 
     [Test]
     public void GetCanonicalNames_UnambiguousLegacyName_ReturnsSingleEntry() {
-        Assert.That(PropertyNameMap.GetCanonicalNames("WhenTaken"), Is.EqualTo(new[] { "System.Photo.DateTaken" }));
+        Assert.That(PropertyNameMap.GetCanonicalNames("WhenTaken"),
+            Is.EqualTo(["System.Photo.DateTaken"]));
     }
 
     [Test]
@@ -67,8 +73,10 @@ internal sealed class PropertyNameMapTest {
 
     [Test]
     public void GetCanonicalName_DuplicateLegacyName_ReturnsNameWindowsResolves() {
-        Assert.That(PropertyNameMap.GetCanonicalName("Copyright"), Is.EqualTo("System.Copyright"));
-        Assert.That(PropertyNameMap.GetCanonicalName("Status"), Is.EqualTo("System.Media.Status"));
+        using (Assert.EnterMultipleScope()) {
+            Assert.That(PropertyNameMap.GetCanonicalName("Copyright"), Is.EqualTo("System.Copyright"));
+            Assert.That(PropertyNameMap.GetCanonicalName("Status"), Is.EqualTo("System.Media.Status"));
+        }
     }
 
     [Test]
@@ -97,7 +105,8 @@ internal sealed class PropertyNameMapTest {
             }
             var canonicalNames = PropertyNameMap.GetCanonicalNames(legacyName);
             if (canonicalNames.Contains(description.CanonicalName) == false) {
-                mismatched.Add($"{legacyName}: windows={description.CanonicalName}, map=[{string.Join(", ", canonicalNames)}]");
+                mismatched.Add(
+                    $"{legacyName}: windows={description.CanonicalName}, map=[{string.Join(", ", canonicalNames)}]");
             }
         }
         Assert.That(mismatched, Is.Empty);
@@ -106,46 +115,55 @@ internal sealed class PropertyNameMapTest {
     [Test]
     public void GetCanonicalNames_LegacyNameWithDifferentCasing_Matches() {
         var expected = new[] { "System.Photo.DateTaken" };
-        Assert.That(PropertyNameMap.GetCanonicalNames("WhenTaken"), Is.EqualTo(expected));
-        Assert.That(PropertyNameMap.GetCanonicalNames("whentaken"), Is.EqualTo(expected));
-        Assert.That(PropertyNameMap.GetCanonicalNames("WHENTAKEN"), Is.EqualTo(expected));
-        Assert.That(PropertyNameMap.GetCanonicalNames("wHeNtAkEn"), Is.EqualTo(expected));
+        using (Assert.EnterMultipleScope()) {
+            Assert.That(PropertyNameMap.GetCanonicalNames("WhenTaken"), Is.EqualTo(expected));
+            Assert.That(PropertyNameMap.GetCanonicalNames("whentaken"), Is.EqualTo(expected));
+            Assert.That(PropertyNameMap.GetCanonicalNames("WHENTAKEN"), Is.EqualTo(expected));
+            Assert.That(PropertyNameMap.GetCanonicalNames("wHeNtAkEn"), Is.EqualTo(expected));
+        }
     }
 
     [Test]
     public void GetCanonicalNames_LegacyNameWithSpaceAndDifferentCasing_Matches() {
-        Assert.That(PropertyNameMap.GetCanonicalNames("audio format"), Is.EqualTo(new[] { "System.Audio.Format" }));
+        Assert.That(PropertyNameMap.GetCanonicalNames("audio format"),
+            Is.EqualTo(["System.Audio.Format"]));
     }
 
     [Test]
     public void GetCanonicalNames_DuplicateLegacyNameWithDifferentCasing_Matches() {
-        Assert.That(PropertyNameMap.GetCanonicalNames("cOpYrIgHt"), Is.EqualTo(new[] { "System.Copyright", "System.Image.Copyright" }));
+        Assert.That(PropertyNameMap.GetCanonicalNames("cOpYrIgHt"),
+            Is.EqualTo(["System.Copyright", "System.Image.Copyright"]));
     }
 
     [Test]
     public void GetCanonicalName_LegacyNameWithDifferentCasing_ReturnsCanonicalCasing() {
-        Assert.That(PropertyNameMap.GetCanonicalName("doctitle"), Is.EqualTo("System.Title"));
+        Assert.That(PropertyNameMap.GetCanonicalName("doctitle"),
+            Is.EqualTo("System.Title"));
     }
 
     [Test]
     public void GetCanonicalName_NullName_Throws() {
-        Assert.That(() => PropertyNameMap.GetCanonicalName(null), Throws.ArgumentNullException);
+        Assert.That(() => PropertyNameMap.GetCanonicalName(null),
+            Throws.ArgumentNullException);
     }
 
     [Test]
     public void GetCanonicalNames_NullName_Throws() {
-        Assert.That(() => PropertyNameMap.GetCanonicalNames(null), Throws.ArgumentNullException);
+        Assert.That(() => PropertyNameMap.GetCanonicalNames(null),
+            Throws.ArgumentNullException);
     }
 
     [Test]
     public void GetCanonicalName_UpperCasedLegacyName_RoundTripsThroughWindows() {
         foreach (var legacyName in LegacyNames) {
             var canonicalName = PropertyNameMap.GetCanonicalName(legacyName.ToUpperInvariant());
-            Assert.That(canonicalName, Is.Not.Null, $"'{legacyName}' did not match case-insensitively.");
-            Assert.That(
-                PropertySystem.GetPropertyDescription(canonicalName).CanonicalName,
-                Is.EqualTo(canonicalName),
-                $"'{canonicalName}' was not accepted by Windows.");
+            using (Assert.EnterMultipleScope()) {
+                Assert.That(canonicalName, Is.Not.Null, $"'{legacyName}' did not match case-insensitively.");
+                Assert.That(
+                    PropertySystem.GetPropertyDescription(canonicalName).CanonicalName,
+                    Is.EqualTo(canonicalName),
+                    $"'{canonicalName}' was not accepted by Windows.");
+            }
         }
     }
 

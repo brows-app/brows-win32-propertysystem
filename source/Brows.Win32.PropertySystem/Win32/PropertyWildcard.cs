@@ -7,7 +7,7 @@ namespace Brows.Win32;
 /// matches that segment and every segment after it. For example <c>System.Photo.*</c> matches
 /// <c>System.Photo.DateTaken</c>, while <c>System.Photo</c> matches only <c>System.Photo</c> itself.
 /// </summary>
-public sealed class PropertyWildcard {
+public sealed record PropertyWildcard {
     /// <summary>
     /// The dot-separated segments of <see cref="Name"/>.
     /// </summary>

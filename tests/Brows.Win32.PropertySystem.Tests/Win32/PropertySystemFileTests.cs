@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Brows.Win32.Tests;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Brows.Win32.Tests;
+namespace Brows.Win32;
 
 [TestFixture]
 public class PropertySystemFileTests {
@@ -18,9 +19,7 @@ public class PropertySystemFileTests {
     [Test]
     public void EnumeratePropertyDescriptions_ExistingFile_ReturnsFileProperties() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
         var descriptions = PropertySystem.EnumeratePropertyDescriptions(file, throwOnError: true).ToList();
-
         Assert.That(descriptions, Is.Not.Empty);
         Assert.That(descriptions.Select(d => d.CanonicalName), Does.Contain("System.Size"));
         Assert.That(descriptions.Select(d => d.CanonicalName), Does.Contain("System.ItemNameDisplay"));
@@ -29,54 +28,44 @@ public class PropertySystemFileTests {
     [Test]
     public void EnumeratePropertyDescriptions_NonexistentFile_ThrowOnErrorTrue_Throws() {
         var file = Path.Combine(TemporaryTestDirectory.Root, Guid.NewGuid().ToString("N") + ".jpg");
-
         var ex = Assert.Throws<FileNotFoundException>(
             () => PropertySystem.EnumeratePropertyDescriptions(file, throwOnError: true).ToList());
-
         Assert.That(ex.HResult, Is.EqualTo(unchecked((int)0x80070002)));
     }
 
     [Test]
     public void EnumeratePropertyDescriptions_NonexistentFile_ThrowOnErrorFalse_ReturnsEmpty() {
         var file = Path.Combine(TemporaryTestDirectory.Root, Guid.NewGuid().ToString("N") + ".jpg");
-
         var descriptions = PropertySystem.EnumeratePropertyDescriptions(file, throwOnError: false).ToList();
-
         Assert.That(descriptions, Is.Empty);
     }
 
     [Test]
     public void GetPropertyValue_Size_MatchesActualFileLength() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
         var value = PropertySystem.GetPropertyValue(file, Size, throwOnError: true);
-
         Assert.That(value.Object, Is.EqualTo((ulong)new FileInfo(file).Length));
     }
 
     [Test]
     public void GetPropertyValue_NeverSetProperty_ReturnsValueWithNullObject() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
         var value = PropertySystem.GetPropertyValue(file, Keywords, throwOnError: true);
-
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope()) {
             Assert.That(value, Is.Not.Null);
             Assert.That(value.Object, Is.Null);
-        });
+        }
     }
 
     [Test]
     public void SetPropertyValue_ThenGetPropertyValue_RoundTripsTitle() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
         PropertySystem.SetPropertyValue(file, Title, "My Test Title");
         var value = PropertySystem.GetPropertyValue(file, Title, throwOnError: true);
-
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope()) {
             Assert.That(value.Object, Is.EqualTo("My Test Title"));
             Assert.That(value.Display, Is.EqualTo("My Test Title"));
-        });
+        }
     }
 
     [Test]
@@ -91,10 +80,10 @@ public class PropertySystemFileTests {
         var title = PropertySystem.GetPropertyValue(file, Title, throwOnError: true);
         var keywords = PropertySystem.GetPropertyValue(file, Keywords, throwOnError: true);
 
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope()) {
             Assert.That(title.Object, Is.EqualTo("Multi Title"));
             Assert.That(keywords.Object, Is.EqualTo(new[] { "alpha", "beta" }));
-        });
+        }
     }
 
     [Test]
@@ -111,16 +100,15 @@ public class PropertySystemFileTests {
     [Test]
     public void SetPropertyValues_IgnoreErrorReturnsTrue_SwallowsFailure() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
-        Assert.DoesNotThrow(() => PropertySystem.SetPropertyValues(file, new Dictionary<PropertyDescription, object> {
-            { Size, (ulong)123 },
-        }, ignoreError: (kv, error) => true));
+        Assert.DoesNotThrow(() => PropertySystem.SetPropertyValues(
+            file, new Dictionary<PropertyDescription, object> {
+                { Size, (ulong)123 },
+            }, ignoreError: (kv, error) => true));
     }
 
     [Test]
     public void SetPropertyValues_IgnoreErrorReturnsFalse_Throws() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
         Assert.Throws<System.Runtime.InteropServices.COMException>(
             () => PropertySystem.SetPropertyValues(file, new Dictionary<PropertyDescription, object> {
                 { Size, (ulong)123 },
@@ -141,20 +129,17 @@ public class PropertySystemFileTests {
             observedError = error;
             return true;
         });
-
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope()) {
             Assert.That(observedProperty.Key, Is.SameAs(size));
             Assert.That(observedError, Is.EqualTo(0x88982F41));
-        });
+        }
     }
 
     [Test]
     public void SetPropertyValues_NullPropertyValues_ThrowsArgumentNullException() {
         var file = TemporaryTestDirectory.CreateJpegFile();
-
         var ex = Assert.Throws<ArgumentNullException>(
             () => PropertySystem.SetPropertyValues(file, null, ignoreError: null));
-
         Assert.That(ex.ParamName, Is.EqualTo("propertyValues"));
     }
 
@@ -185,10 +170,10 @@ public class PropertySystemFileTests {
         var destinationTitle = PropertySystem.GetPropertyValue(destination, Title, throwOnError: true);
         var destinationKeywords = PropertySystem.GetPropertyValue(destination, Keywords, throwOnError: true);
 
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope()) {
             Assert.That(destinationTitle.Object, Is.EqualTo("Source Title"));
             Assert.That(destinationKeywords.Object, Is.EqualTo(new[] { "alpha", "beta" }));
-        });
+        }
     }
 
     [Test]
@@ -210,9 +195,9 @@ public class PropertySystemFileTests {
         var destinationTitle = PropertySystem.GetPropertyValue(destination, Title, throwOnError: true);
         var destinationKeywords = PropertySystem.GetPropertyValue(destination, Keywords, throwOnError: true);
 
-        Assert.Multiple(() => {
+        using (Assert.EnterMultipleScope()) {
             Assert.That(destinationTitle.Object, Is.EqualTo("Source Title"));
             Assert.That(destinationKeywords.Object, Is.Null);
-        });
+        }
     }
 }

@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace Brows.Win32.Tests;
+namespace Brows;
 
 /// <summary>
 /// A tiny (4x4) valid JPEG, embedded as base64 so tests don't need an imaging library

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Brows.Win32.Tests;
+namespace Brows;
 
 /// <summary>
 /// Creates one temporary directory shared by every test in this assembly, and deletes

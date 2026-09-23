@@ -20,5 +20,5 @@
     <File Path="tests/Directory.Build.props" />
   </Folder>
   <Project Path="source/Brows.Win32.PropertySystem/Brows.Win32.PropertySystem.csproj" />
-  <Project Path="tests/Brows.Win32.PropertySystem.Tests/Brows.Win32.PropertySystem.Tests.csproj" Id="bb0798f8-d956-4a3f-a16e-2dd0380305d2" />
+  <Project Path="tests/Brows.Win32.PropertySystem.Tests/Brows.Win32.PropertySystem.Tests.csproj" />
 </Solution>

@@ -10,6 +10,8 @@
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />
     <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="spelling.exclusion.dic" />
   </Folder>
   <Folder Name="/_/source/">
     <File Path="source/Directory.Build.props" />

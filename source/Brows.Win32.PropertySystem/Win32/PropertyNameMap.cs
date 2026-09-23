@@ -1,6 +1,5 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Brows.Win32;
 
@@ -10,45 +9,72 @@ namespace Brows.Win32;
 /// </summary>
 public static class PropertyNameMap {
     /// <summary>
-    /// Gets every canonical name associated with <paramref name="propertyName"/>.
+    /// Gets every canonical name associated with a legacy property name.
     /// </summary>
-    /// <param name="propertyName">
-    /// A legacy property name, or a canonical name (which maps to itself).
+    /// <param name="legacyName">
+    /// A legacy property name, such as <c>WhenTaken</c>. Matched case-insensitively, as Windows
+    /// matches legacy names.
+    /// </param>
+    /// <param name="throwIfNotFound">
+    /// <see langword="true"/> to throw when <paramref name="legacyName"/> is not a known legacy
+    /// name; <see langword="false"/> to return <see langword="null"/> instead.
     /// </param>
     /// <returns>
-    /// The associated canonical names, or <see langword="null"/> if <paramref name="propertyName"/>
-    /// is neither a known legacy name nor a known canonical name. A handful of legacy names are
-    /// documented against more than one canonical name, so the result can contain multiple entries.
+    /// The associated canonical names, or <see langword="null"/> if <paramref name="legacyName"/>
+    /// is not a known legacy name and <paramref name="throwIfNotFound"/> is <see langword="false"/>.
+    /// A handful of legacy names are documented against more than one canonical name, so the result
+    /// can contain multiple entries.
     /// </returns>
-    public static IReadOnlyList<string> GetCanonicalNames(string propertyName) {
-        if (LegacyNameMap.TryGetValue(propertyName, out var value)) {
-            return value;
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="legacyName"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="legacyName"/> is not a known legacy name and
+    /// <paramref name="throwIfNotFound"/> is <see langword="true"/>.
+    /// </exception>
+    public static IReadOnlyList<string> GetCanonicalNames(string legacyName, bool throwIfNotFound = false) {
+        if (legacyName is null) {
+            throw new ArgumentNullException(nameof(legacyName));
         }
-        if (CanonicalNameSet.Contains(propertyName)) {
-            return [propertyName];
+        if (LegacyNameMap.TryGetValue(legacyName, out var canonicalNames)) {
+            return canonicalNames;
+        }
+        if (throwIfNotFound) {
+            throw new ArgumentException($"'{legacyName}' is not a legacy property name.", nameof(legacyName));
         }
         return null;
     }
 
     /// <summary>
-    /// Gets the first canonical name associated with <paramref name="propertyName"/>.
+    /// Gets the first canonical name associated with a legacy property name.
     /// </summary>
-    /// <param name="propertyName">
-    /// A legacy property name, or a canonical name (which maps to itself).
+    /// <param name="legacyName">
+    /// A legacy property name, such as <c>WhenTaken</c>. Matched case-insensitively, as Windows
+    /// matches legacy names.
+    /// </param>
+    /// <param name="throwIfNotFound">
+    /// <see langword="true"/> to throw when <paramref name="legacyName"/> is not a known legacy
+    /// name; <see langword="false"/> to return <see langword="null"/> instead.
     /// </param>
     /// <returns>
-    /// The first associated canonical name, or <see langword="null"/> if <paramref name="propertyName"/>
-    /// is neither a known legacy name nor a known canonical name. Use <see cref="GetCanonicalNames"/>
-    /// for legacy names that are documented against more than one canonical name.
+    /// The first associated canonical name, or <see langword="null"/> if <paramref name="legacyName"/>
+    /// is not a known legacy name and <paramref name="throwIfNotFound"/> is <see langword="false"/>.
+    /// Use <see cref="GetCanonicalNames"/> for legacy names that are documented against more than
+    /// one canonical name.
     /// </returns>
-    public static string GetCanonicalName(string propertyName) {
-        return GetCanonicalNames(propertyName)?[0];
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="legacyName"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="legacyName"/> is not a known legacy name and
+    /// <paramref name="throwIfNotFound"/> is <see langword="true"/>.
+    /// </exception>
+    public static string GetCanonicalName(string legacyName, bool throwIfNotFound = false) {
+        return GetCanonicalNames(legacyName, throwIfNotFound)?[0];
     }
 
-    private static readonly HashSet<string> CanonicalNameSet;
-
     private sealed class Map : IReadOnlyDictionary<string, IReadOnlyList<string>> {
-        private readonly Dictionary<string, List<string>> Data = [];
+        private readonly Dictionary<string, List<string>> Data = new(StringComparer.OrdinalIgnoreCase);
 
         public void Add(string legacyName, string canonicalName) {
             if (Data.TryGetValue(legacyName, out var canonicalNames) == false) {
@@ -219,8 +245,4 @@ public static class PropertyNameMap {
         { "Write", "System.DateModified" },
         { "Year", "System.Media.Year" },
     };
-
-    static PropertyNameMap() {
-        CanonicalNameSet = [.. LegacyNameMap.Values.SelectMany(names => names)];
-    }
 }

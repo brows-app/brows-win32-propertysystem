@@ -23,13 +23,46 @@ internal sealed class PropertyNameMapTest {
     }
 
     [Test]
-    public void GetCanonicalNames_CanonicalName_MapsToItself() {
-        Assert.That(PropertyNameMap.GetCanonicalNames("System.Image.Copyright"), Is.EqualTo(new[] { "System.Image.Copyright" }));
+    public void GetCanonicalNames_CanonicalName_ReturnsNull() {
+        Assert.That(PropertyNameMap.GetCanonicalNames("System.Image.Copyright"), Is.Null);
     }
 
     [Test]
     public void GetCanonicalNames_UnknownName_ReturnsNull() {
         Assert.That(PropertyNameMap.GetCanonicalNames("Not.A.Real.Property"), Is.Null);
+    }
+
+    [Test]
+    public void GetCanonicalNames_UnknownNameAndThrowIfNotFound_Throws() {
+        Assert.That(
+            () => PropertyNameMap.GetCanonicalNames("Not.A.Real.Property", throwIfNotFound: true),
+            Throws.ArgumentException);
+    }
+
+    [Test]
+    public void GetCanonicalNames_KnownNameAndThrowIfNotFound_DoesNotThrow() {
+        Assert.That(
+            PropertyNameMap.GetCanonicalNames("WhenTaken", throwIfNotFound: true),
+            Is.EqualTo(new[] { "System.Photo.DateTaken" }));
+    }
+
+    [Test]
+    public void GetCanonicalName_UnknownNameAndThrowIfNotFound_Throws() {
+        Assert.That(
+            () => PropertyNameMap.GetCanonicalName("Not.A.Real.Property", throwIfNotFound: true),
+            Throws.ArgumentException);
+    }
+
+    [Test]
+    public void GetCanonicalName_KnownNameAndThrowIfNotFound_DoesNotThrow() {
+        Assert.That(
+            PropertyNameMap.GetCanonicalName("WhenTaken", throwIfNotFound: true),
+            Is.EqualTo("System.Photo.DateTaken"));
+    }
+
+    [Test]
+    public void GetCanonicalName_CanonicalName_ReturnsNull() {
+        Assert.That(PropertyNameMap.GetCanonicalName("System.Photo.DateTaken"), Is.Null);
     }
 
     [Test]
@@ -68,6 +101,52 @@ internal sealed class PropertyNameMapTest {
             }
         }
         Assert.That(mismatched, Is.Empty);
+    }
+
+    [Test]
+    public void GetCanonicalNames_LegacyNameWithDifferentCasing_Matches() {
+        var expected = new[] { "System.Photo.DateTaken" };
+        Assert.That(PropertyNameMap.GetCanonicalNames("WhenTaken"), Is.EqualTo(expected));
+        Assert.That(PropertyNameMap.GetCanonicalNames("whentaken"), Is.EqualTo(expected));
+        Assert.That(PropertyNameMap.GetCanonicalNames("WHENTAKEN"), Is.EqualTo(expected));
+        Assert.That(PropertyNameMap.GetCanonicalNames("wHeNtAkEn"), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void GetCanonicalNames_LegacyNameWithSpaceAndDifferentCasing_Matches() {
+        Assert.That(PropertyNameMap.GetCanonicalNames("audio format"), Is.EqualTo(new[] { "System.Audio.Format" }));
+    }
+
+    [Test]
+    public void GetCanonicalNames_DuplicateLegacyNameWithDifferentCasing_Matches() {
+        Assert.That(PropertyNameMap.GetCanonicalNames("cOpYrIgHt"), Is.EqualTo(new[] { "System.Copyright", "System.Image.Copyright" }));
+    }
+
+    [Test]
+    public void GetCanonicalName_LegacyNameWithDifferentCasing_ReturnsCanonicalCasing() {
+        Assert.That(PropertyNameMap.GetCanonicalName("doctitle"), Is.EqualTo("System.Title"));
+    }
+
+    [Test]
+    public void GetCanonicalName_NullName_Throws() {
+        Assert.That(() => PropertyNameMap.GetCanonicalName(null), Throws.ArgumentNullException);
+    }
+
+    [Test]
+    public void GetCanonicalNames_NullName_Throws() {
+        Assert.That(() => PropertyNameMap.GetCanonicalNames(null), Throws.ArgumentNullException);
+    }
+
+    [Test]
+    public void GetCanonicalName_UpperCasedLegacyName_RoundTripsThroughWindows() {
+        foreach (var legacyName in LegacyNames) {
+            var canonicalName = PropertyNameMap.GetCanonicalName(legacyName.ToUpperInvariant());
+            Assert.That(canonicalName, Is.Not.Null, $"'{legacyName}' did not match case-insensitively.");
+            Assert.That(
+                PropertySystem.GetPropertyDescription(canonicalName).CanonicalName,
+                Is.EqualTo(canonicalName),
+                $"'{canonicalName}' was not accepted by Windows.");
+        }
     }
 
     private static IEnumerable<string> LegacyNames => [
